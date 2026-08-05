@@ -50,9 +50,6 @@ function printUsage () {
   process.stdout.write('Usage:\n  node eco-guardian.js [flags]\n\n')
   process.stdout.write('Flags:\n')
   process.stdout.write(
-    '  --path <dir>         Scan specific directory (default: home directory)\n'
-  )
-  process.stdout.write(
     '  --global-only        Only scan global npm installs\n'
   )
   process.stdout.write(
@@ -151,7 +148,9 @@ function printUsage () {
   )
   process.stdout.write('  --help               Show this help\n')
   process.stdout.write('  --version            Show version\n')
-  process.stdout.write('  --global             Include / root scan on Unix\n')
+  process.stdout.write(
+    '  --global             Scan globally across system roots (default: local)\n'
+  )
   process.stdout.write(
     '  --all-drives         Alias for full-disk opt-in behavior\n'
   )
@@ -207,8 +206,6 @@ function parseArgs (argv) {
     exportInventoryJsonl: null,
     selftest: false,
     selftestQuiet: false,
-    path: os.homedir(),
-    pathExplicit: false,
     globalOnly: false,
     libraryTarget: null,
     ecosystems: ['npm'],
@@ -255,16 +252,6 @@ function parseArgs (argv) {
 
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i]
-    if (token === '--path') {
-      const next = argv[i + 1]
-      if (!next || next.startsWith('--')) {
-        throw new Error('Missing value for --path')
-      }
-      args.path = next
-      args.pathExplicit = true
-      i += 1
-      continue
-    }
     if (token === '--severity') {
       const next = argv[i + 1]
       if (!next || next.startsWith('--')) {

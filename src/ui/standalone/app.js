@@ -35,14 +35,6 @@
         description: 'Where the scan should run.',
         fields: [
           {
-            key: 'path',
-            label: 'Scan directory',
-            type: 'text',
-            placeholder: 'e.g. ~/projects/my-app',
-            help: '--path is only included when a directory is entered.',
-            showIf: [{ key: 'globalOnly', truthy: false }]
-          },
-          {
             key: 'globalOnly',
             label: 'Global npm installs only',
             type: 'boolean',
@@ -59,23 +51,23 @@
           },
           {
             key: 'library',
-            label: 'Focus library',
+            label: 'Focus library (--lib)',
             type: 'text',
             placeholder: 'npm:lodash',
             help:
-              'Matches --library <ecosystem>:<name>. When set, scan is focused to that one library.'
+              'Matches --library/--lib <ecosystem>:<name>. When set, scan is focused to that one library.'
           },
           {
             key: 'global',
-            label: 'Include / root on Unix-like systems',
+            label: 'Global scan',
             type: 'boolean',
-            help: 'Matches --global.'
+            help: 'Matches --global. Local scan is the default; enable this to scan system roots.'
           },
           {
             key: 'allDrives',
-            label: 'Include all drives',
+            label: 'All drives (global alias)',
             type: 'boolean',
-            help: 'Matches --all-drives.'
+            help: 'Matches --all-drives. Enables a global scan across all available drives.'
           }
         ]
       },
@@ -426,8 +418,6 @@
     for (const k in input) {
       if (Object.prototype.hasOwnProperty.call(input, k)) s[k] = input[k]
     }
-    // path defaults to empty string (no autofill) — KEY CHANGE from server
-    s.path = s.path == null ? '' : String(s.path)
     s.globalOnly = Boolean(s.globalOnly)
     s.ecosystems = normalizeEcosystems(s.ecosystems)
     s.library = s.library == null ? null : String(s.library)
@@ -550,10 +540,6 @@
     const s = normalizeState(inputState)
     const parts = [UI_MANIFEST.commandPrefix]
 
-    // Only include --path when a non-empty directory is entered
-    if (!s.globalOnly && s.path) {
-      pushFlag(parts, '--path', s.path, platform)
-    }
     if (s.globalOnly) parts.push('--global-only')
     if (s.ecosystems.length > 0 && !(s.ecosystems.length === 1 && s.ecosystems[0] === 'npm')) {
       parts.push('--ecosystems')

@@ -63,7 +63,6 @@ function assertContainsInOrder(text, parts, message) {
 
 async function testCommandBuilder() {
   const command = buildCommand({
-    path: "C:\\demo path",
     ecosystems: ["npm", "gradle"],
     library: "npm:lodash",
     graphResolution: true,
@@ -81,7 +80,6 @@ async function testCommandBuilder() {
 
   const expected = [
     "node eco-guardian.js",
-    `--path ${shellQuote("C:\\demo path")}`,
     `--ecosystems ${shellQuote("npm,gradle")}`,
     `--library ${shellQuote("npm:lodash")}`,
     "--graph-resolution",
@@ -101,29 +99,23 @@ async function testCommandBuilder() {
   assert(!command.includes("--seek"), "UI command should not emit --seek");
   assert(!command.includes("--echo"), "UI command should not emit --echo");
 
-  // path is emitted without pathExplicit (plain truthy check)
-  const withPath = buildCommand({ path: "/home/user/project" });
-  assert(
-    withPath.includes("--path"),
-    "path should be emitted without pathExplicit",
-  );
-  assert(
-    withPath.includes("'/home/user/project'"),
-    "path value should be quoted",
-  );
-
-  // path suppressed when globalOnly is set
-  const withGlobalOnly = buildCommand({
-    path: "/home/user/project",
-    globalOnly: true,
-  });
-  assert(
-    !withGlobalOnly.includes("--path"),
-    "path should be suppressed when globalOnly is true",
-  );
+  const withGlobalOnly = buildCommand({ globalOnly: true });
   assert(
     withGlobalOnly.includes("--global-only"),
     "globalOnly flag should be present",
+  );
+
+  const focusedGlobal = buildCommand({
+    library: "npm:lodash",
+    global: true,
+  });
+  assert(
+    focusedGlobal.includes("--library 'npm:lodash'"),
+    "library focus should be available in the UI command",
+  );
+  assert(
+    focusedGlobal.includes("--global"),
+    "global scan should be available in the UI command",
   );
 
   // dependencyCheckMode alone emits --dependency-check-mode (no nvdMode=on required)
@@ -146,10 +138,10 @@ async function testCommandBuilder() {
 }
 
 async function testVisibilityRules() {
-  const hiddenPath = getVisibleFields({ globalOnly: true }).some(
+  const hasPathField = getVisibleFields({}).some(
     (field) => field.key === "path",
   );
-  assert(hiddenPath === false, "path should hide when global-only is enabled");
+  assert(!hasPathField, "path should not be configurable in the UI");
 
   const gradleState = getVisibleFields({
     ecosystems: ["gradle"],
@@ -181,13 +173,23 @@ async function testVisibilityRules() {
     !watchFields.some((field) => field.key === "seek" || field.key === "echo"),
     "easter-egg fields should not appear in the UI manifest",
   );
+
+  const scanFields = getVisibleFields({});
+  const libraryField = scanFields.find((field) => field.key === "library");
+  const globalField = scanFields.find((field) => field.key === "global");
+  assert(
+    libraryField && libraryField.help.includes("--lib"),
+    "UI should document the --lib library alias",
+  );
+  assert(
+    globalField && globalField.help.includes("Local scan is the default"),
+    "UI should describe local scans as the default",
+  );
 }
 
 async function testServerEndpoints() {
   const options = parseArgs([
     "--ui",
-    "--path",
-    "C:\\work\\demo",
     "--ecosystems",
     "gradle",
     "--graph-resolution",
